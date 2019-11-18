@@ -94,7 +94,7 @@ func Breed(population []genome, fitness []float64, fitnessTotal float64, mutatio
 	fitnessGoal := rand.Float64() * fitnessTotal
 	total := 0.0
 	for i := range population {
-		if total + fitness[i] < fitnessGoal {
+		if total+fitness[i] < fitnessGoal {
 			total += fitness[i]
 			continue
 		}
@@ -129,6 +129,15 @@ func LargestIndex(data []float64) int {
 	return largestIndex
 }
 
+func (g genome) Equal(other genome) bool {
+	for i := range g {
+		if g[i] != other[i] {
+			return false
+		}
+	}
+	return true
+}
+
 var epsilon = math.Nextafter(1.0, 2.0) - 1.0
 
 func (g genome) Fitness(target float64) float64 {
@@ -144,9 +153,10 @@ func main() {
 	genomeSize := flag.Int("genomeSize", 7, "The number of instructions in the genome.")
 	targetNumber := flag.Float64("targetNumber", 200.0, "The number we're attempting to find a solution for.")
 	targetTolerance := flag.Float64("targetTolerance", 0.0000001, "How close the correct answer should be to count.")
+	diffOutput := flag.Bool("diffOutput", true, "If set, generation champions will only print if they're different from the last generation.")
 	flag.Parse()
 
-	//reader := bufio.NewReader(os.Stdin)
+	// reader := bufio.NewReader(os.Stdin)
 	population := make([]genome, *popSize)
 
 	// Initial pass to create completely random population
@@ -158,6 +168,7 @@ func main() {
 	}
 
 	generationCount := 1
+	var lastChampion genome = nil
 
 	for {
 		// Calculate fitness
@@ -170,14 +181,16 @@ func main() {
 
 		// Print out the current generation champion
 		championIndex := LargestIndex(fitnessScores)
-		fmt.Printf("Generation %d: %s = %f\n", generationCount, population[championIndex].String(), population[championIndex].Value())
+		if lastChampion == nil || !lastChampion.Equal(population[championIndex]) || !*diffOutput {
+			fmt.Printf("Generation %d: %s = %f\n", generationCount, population[championIndex].String(), population[championIndex].Value())
+			lastChampion = population[championIndex]
+		}
 
 		// Check to see if we made it
-		if float64(*targetNumber) - *targetTolerance < population[championIndex].Value() && population[championIndex].Value() < float64(*targetNumber) + *targetTolerance {
+		if float64(*targetNumber)-*targetTolerance < population[championIndex].Value() && population[championIndex].Value() < float64(*targetNumber)+*targetTolerance {
 			fmt.Printf("Solution found!\n")
 			os.Exit(0)
 		}
-		//_, _ = reader.ReadString('\n')
 
 		// begin the next population
 		newPopulation := make([]genome, *popSize)
