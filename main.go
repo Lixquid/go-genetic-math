@@ -33,6 +33,7 @@ func main() {
 	mutationRate := flag.Float64("mutationRate", 0.01, "The change of a gene mutating when breeding.")
 	immortalChampion := flag.Bool("immortalChampion", true, "If set, the fittest genome in a population will automatically survive to the next.")
 	genomeSize := flag.Int("genomeSize", 7, "The number of genes (operations) in a genome.")
+	crossover := flag.Bool("crossover", true, "If set, breeding a new genome will involve two parents with crossover.")
 	diffOutput := flag.Bool("diffOutput", true, "If set, champions will only be printed if they're different to the previous generation's champion.")
 	colorOutput := flag.Bool("colorOutput", true, "If set, genomes will be printed colourized, with invalid genes printed in red.")
 	flag.Parse()
@@ -79,7 +80,7 @@ func main() {
 			if i == 0 && *immortalChampion {
 				newPopulation[0] = population[champion]
 			} else {
-				newPopulation[i] = Breed(population, fitnessScores, fitnessTotal, *mutationRate)
+				newPopulation[i] = Breed(population, fitnessScores, fitnessTotal, *mutationRate, *crossover)
 			}
 		}
 

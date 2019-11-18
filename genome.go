@@ -167,11 +167,19 @@ func selectGenome(population []Genome, fitness []float64, fitnessTotal float64) 
 	panic("Reached end of population when selecting Genome")
 }
 
-func Breed(population []Genome, fitness []float64, fitnessTotal float64, mutationRate float64) Genome {
+func Breed(population []Genome, fitness []float64, fitnessTotal float64, mutationRate float64, crossover bool) Genome {
 	new := make(Genome, len(population[0]))
 	copy(new, selectGenome(population, fitness, fitnessTotal))
 
-	// TODO: Crossover
+	if crossover {
+		parent := selectGenome(population, fitness, fitnessTotal)
+		if !parent.Equal(new) {
+			cutoff := int(rand.Float64() * float64(len(new)))
+			for i := cutoff; i < len(new); i++ {
+				new[i] = parent[i]
+			}
+		}
+	}
 
 	// Mutate - we're actually randomizing an entire gene, instead of mutating one bit
 	for j := range new {
