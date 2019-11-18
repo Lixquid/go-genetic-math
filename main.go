@@ -144,6 +144,7 @@ func main() {
 	genomeSize := flag.Int("genomeSize", 7, "The number of instructions in the genome.")
 	targetNumber := flag.Int("targetNumber", 700, "The number we're attempting to find a solution for.")
 	targetTolerance := flag.Float64("targetTolerance", 0.0000001, "How close the correct answer should be to count.")
+	flag.Parse()
 
 	//reader := bufio.NewReader(os.Stdin)
 	population := make([]genome, *popSize)
