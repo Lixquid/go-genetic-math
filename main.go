@@ -131,18 +131,18 @@ func LargestIndex(data []float64) int {
 
 var epsilon = math.Nextafter(1.0, 2.0) - 1.0
 
-func (g genome) Fitness(target int) float64 {
-	return 1 / math.Max(math.Abs(float64(target) - g.Value()), epsilon)
+func (g genome) Fitness(target float64) float64 {
+	return 1 / math.Max(math.Abs(target-g.Value()), epsilon)
 }
 
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	popSize := flag.Int("popsize", 100, "The number of members in a population.")
-	mutRate := flag.Float64("mutrate", 0.05, "The mutation rate.")
-	immortalChampion := flag.Bool("immortalChampion", false, "If set, the fittest member will automatically survive.")
+	popSize := flag.Int("populationSize", 100, "The number of members in a population.")
+	mutRate := flag.Float64("mutationRate", 0.01, "The mutation rate.")
+	immortalChampion := flag.Bool("immortalChampion", true, "If set, the fittest member will automatically survive.")
 	genomeSize := flag.Int("genomeSize", 7, "The number of instructions in the genome.")
-	targetNumber := flag.Int("targetNumber", 700, "The number we're attempting to find a solution for.")
+	targetNumber := flag.Float64("targetNumber", 200.0, "The number we're attempting to find a solution for.")
 	targetTolerance := flag.Float64("targetTolerance", 0.0000001, "How close the correct answer should be to count.")
 	flag.Parse()
 
