@@ -6,199 +6,80 @@ import (
 	"math"
 	"math/rand"
 	"os"
-	"strings"
 	"time"
 )
 
-// Valid instructions: 0-9 number, 10: addition, 11: subtraction, 12: multiplication, 13: division
-type genome []uint8
+const epsilon = 0.000001
 
-func (g genome) String() string {
-	var output strings.Builder
-	for i := range g {
-		switch g[i] {
-		case 10:
-			output.WriteRune('+')
-		case 11:
-			output.WriteRune('-')
-		case 12:
-			output.WriteRune('*')
-		case 13:
-			output.WriteRune('/')
-		case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9:
-			output.WriteRune(rune(g[i] + 48))
-		default:
-			// Invalid gene
-			output.WriteRune('X')
-		}
-	}
-	return output.String()
-}
-
-const (
-	none     = iota
-	add      = iota
-	subtract = iota
-	multiply = iota
-	divide   = iota
-)
-
-func (g genome) Value() float64 {
-	initialized := false
-	value := 0.0
-	operand := none
-
-	for i := range g {
-		switch g[i] {
-		case 10:
-			if initialized && operand == none {
-				operand = add
-			}
-		case 11:
-			if initialized && operand == none {
-				operand = subtract
-			}
-		case 12:
-			if initialized && operand == none {
-				operand = multiply
-			}
-		case 13:
-			if initialized && operand == none {
-				operand = divide
-			}
-		case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9:
-			if !initialized {
-				initialized = true
-				value = float64(g[i])
-				break
-			}
-			switch operand {
-			case add:
-				value += float64(g[i])
-			case subtract:
-				value -= float64(g[i])
-			case multiply:
-				value *= float64(g[i])
-			case divide:
-				value /= float64(g[i])
-			}
-			operand = none
-		}
-	}
-
-	return value
-}
-
-// Single parent breeding
-func Breed(population []genome, fitness []float64, fitnessTotal float64, mutationRate float64) genome {
-	fitnessGoal := rand.Float64() * fitnessTotal
-	total := 0.0
-	for i := range population {
-		if total+fitness[i] < fitnessGoal {
-			total += fitness[i]
-			continue
-		}
-
-		new := make(genome, len(population[0]))
-		copy(new, population[i])
-
-		// mutate
-		// Ideally we'd flip one bit, but it doesn't matter too much
-		for j := range new {
-			if rand.Float64() < mutationRate {
-				new[j] = uint8(rand.Uint32() & 0xf)
-			}
-		}
-
-		return new
-	}
-
-	// Should never ever happen
-	panic("Reached end of population when breeding.")
-}
-
-func LargestIndex(data []float64) int {
+// Returns the index of the largest float in a slice.
+func MaximumIndex(slice []float64) int {
 	largestIndex := -1
-	largestValue := -1.0
-	for i := range data {
-		if data[i] > largestValue {
+	largestValue := math.Inf(-1)
+	for i := range slice {
+		if slice[i] > largestValue {
 			largestIndex = i
-			largestValue = data[i]
+			largestValue = slice[i]
 		}
 	}
+
 	return largestIndex
-}
-
-func (g genome) Equal(other genome) bool {
-	for i := range g {
-		if g[i] != other[i] {
-			return false
-		}
-	}
-	return true
-}
-
-var epsilon = math.Nextafter(1.0, 2.0) - 1.0
-
-func (g genome) Fitness(target float64) float64 {
-	return 1 / math.Max(math.Abs(target-g.Value()), epsilon)
 }
 
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	popSize := flag.Int("populationSize", 100, "The number of members in a population.")
-	mutRate := flag.Float64("mutationRate", 0.01, "The mutation rate.")
-	immortalChampion := flag.Bool("immortalChampion", true, "If set, the fittest member will automatically survive.")
-	genomeSize := flag.Int("genomeSize", 7, "The number of instructions in the genome.")
-	targetNumber := flag.Float64("targetNumber", 200.0, "The number we're attempting to find a solution for.")
-	targetTolerance := flag.Float64("targetTolerance", 0.0000001, "How close the correct answer should be to count.")
-	diffOutput := flag.Bool("diffOutput", true, "If set, generation champions will only print if they're different from the last generation.")
+	target := flag.Float64("target", 200, "The value the genomes are attempting to solve for.")
+	populationSize := flag.Int("populationSize", 100, "The number of genomes in a population.")
+	mutationRate := flag.Float64("mutationRate", 0.01, "The change of a gene mutating when breeding.")
+	immortalChampion := flag.Bool("immortalChampion", true, "If set, the fittest genome in a population will automatically survive to the next.")
+	genomeSize := flag.Int("genomeSize", 7, "The number of genes (operations) in a genome.")
+	diffOutput := flag.Bool("diffOutput", true, "If set, champions will only be printed if they're different to the previous generation's champion.")
+	colorOutput := flag.Bool("colorOutput", true, "If set, genomes will be printed colourized, with invalid genes printed in red.")
 	flag.Parse()
 
-	// reader := bufio.NewReader(os.Stdin)
-	population := make([]genome, *popSize)
+	population := make([]Genome, *populationSize)
+	generationCount := 1
+	var lastChampion Genome = nil
 
-	// Initial pass to create completely random population
-	for i := range population {
-		population[i] = make(genome, *genomeSize)
-		for j := 0; j < *genomeSize; j++ {
-			population[i][j] = uint8(rand.Uint32() & 0xf)
+	// First pass, fill the population will completely random genomes
+	for genome := range population {
+		population[genome] = make(Genome, *genomeSize)
+		for gene := 0; gene < *genomeSize; gene++ {
+			population[genome][gene] = uint8(rand.Uint32() & 0xf)
 		}
 	}
 
-	generationCount := 1
-	var lastChampion genome = nil
-
 	for {
-		// Calculate fitness
-		fitnessScores := make([]float64, *popSize)
+		// Calculate the fitnesses of the population
+		fitnessScores := make([]float64, *populationSize)
 		fitnessTotal := 0.0
 		for i := range population {
-			fitnessScores[i] = population[i].Fitness(*targetNumber)
+			fitnessScores[i] = population[i].Fitness(*target)
 			fitnessTotal += fitnessScores[i]
 		}
 
-		// Print out the current generation champion
-		championIndex := LargestIndex(fitnessScores)
-		if lastChampion == nil || !lastChampion.Equal(population[championIndex]) || !*diffOutput {
-			fmt.Printf("Generation %d: %s = %f\n", generationCount, population[championIndex].String(), population[championIndex].Value())
-			lastChampion = population[championIndex]
+		// Print out the current champion
+		champion := MaximumIndex(fitnessScores)
+		if !*diffOutput || lastChampion == nil || !lastChampion.Equal(population[champion]) {
+			championValue := population[champion].Value()
+
+			fmt.Printf("Generation %d: %s = %f\n", generationCount, population[champion].String(*colorOutput), championValue)
+			lastChampion = population[champion]
+
+			// Check if we've made it to the target
+			if *target-epsilon < championValue && championValue < *target+epsilon {
+				fmt.Print("Solution found!\n")
+				os.Exit(0)
+			}
 		}
 
-		// Check to see if we made it
-		if float64(*targetNumber)-*targetTolerance < population[championIndex].Value() && population[championIndex].Value() < float64(*targetNumber)+*targetTolerance {
-			fmt.Printf("Solution found!\n")
-			os.Exit(0)
-		}
-
-		// begin the next population
-		newPopulation := make([]genome, *popSize)
+		// Make the next population
+		newPopulation := make([]Genome, *populationSize)
 		for i := range newPopulation {
 			if i == 0 && *immortalChampion {
-				newPopulation[i] = population[championIndex]
+				newPopulation[0] = population[champion]
 			} else {
-				newPopulation[i] = Breed(population, fitnessScores, fitnessTotal, *mutRate)
+				newPopulation[i] = Breed(population, fitnessScores, fitnessTotal, *mutationRate)
 			}
 		}
 
