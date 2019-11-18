@@ -2,32 +2,9 @@
 
 A small experiment with genetic algorithms in Go.
 
-Example usage: `go run main.go --targetNumber 30`
+Example usage: `go run main.go genome.go --target 200`
 
-```
-$> go run main.go --targetNumber 1423 --genomeSize 14
-Generation 1: 91*X9X99747485 = 81.000000
-Generation 4: 8897244+X7*71- = 105.000000
-Generation 23: 88972*47X7*71- = 224.000000
-Generation 29: 88972*-7X2*71- = 392.000000
-Generation 38: 86972*4*X7*71- = 1568.000000
-Generation 41: 86972*4*X7*61- = 1344.000000
-Generation 334: 86972*4*X7*6+9 = 1353.000000
-Generation 671: 86972*4*97*579 = 1440.000000
-Generation 688: 86972*4*97*5-9 = 1431.000000
-Generation 25942: 86*52*4*97-5-9 = 1426.000000
-Generation 25949: 86*52*4*97-7-9 = 1424.000000
-Generation 25951: 86*52*4*97-8-9 = 1423.000000
-Solution found!
-```
-
-## Flags
-
-- `populationSize`: The number of genomes in each population. Defaults to `100`.
-- `mutationRate`: The mutation rate for each gene. When breeding, this is the chance each gene will mutate into a new gene. Defaults to `0.01`.
-- `immortalChampion`: If set, the genome with the highest fitness will automatically survive into the next generation. Defaults to on.
-- `genomeSize`: The number of genes (instructions) in each genome. Defaults to `7`.
-- `targetNumber`: The number the genomes are attempting to find a solution for. Defaults to `200`.
+![Example](https://i.imgur.com/uibDL26.png)
 
 ## The genomes
 
@@ -48,3 +25,22 @@ For example:
 
 - `3+2*4/2` = ((3+2) * 4) / 2 = 10
 - `32+*1X9` = 3 (ignored) + (ignored) 1 (ignored) (ignored) = 4
+
+## Flags
+
+- `target` float
+    - The value the genomes are attempting to solve for. (default 200)
+- `populationSize` int
+    - The number of genomes in a population. (default 100)
+- `mutationRate` float
+    - The chance of a gene mutating when breeding. (default 0.01)
+- `immortalChampion`
+    - If set, the fittest genome in a population will automatically survive to the next. (default true)
+- `genomeSize` int
+    - The number of genes (operations) in a genome. (default 7)
+- `crossover`
+    - If set, breeding a new genome will involve two parents with crossover. (default true)
+- `colorOutput`
+    - If set, genomes will be printed colourized, with invalid genes printed in red. (default true)
+- `diffOutput`
+    - If set, champions will only be printed if they're different to the previous generation's champion. (default true)

@@ -30,7 +30,7 @@ func main() {
 
 	target := flag.Float64("target", 200, "The value the genomes are attempting to solve for.")
 	populationSize := flag.Int("populationSize", 100, "The number of genomes in a population.")
-	mutationRate := flag.Float64("mutationRate", 0.01, "The change of a gene mutating when breeding.")
+	mutationRate := flag.Float64("mutationRate", 0.01, "The chance of a gene mutating when breeding.")
 	immortalChampion := flag.Bool("immortalChampion", true, "If set, the fittest genome in a population will automatically survive to the next.")
 	genomeSize := flag.Int("genomeSize", 7, "The number of genes (operations) in a genome.")
 	crossover := flag.Bool("crossover", true, "If set, breeding a new genome will involve two parents with crossover.")
