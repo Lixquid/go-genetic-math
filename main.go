@@ -51,19 +51,19 @@ func (g genome) Value() float64 {
 	for i := range g {
 		switch g[i] {
 		case 10:
-			if initialized {
+			if initialized && operand == none {
 				operand = add
 			}
 		case 11:
-			if initialized {
+			if initialized && operand == none {
 				operand = subtract
 			}
 		case 12:
-			if initialized {
+			if initialized && operand == none {
 				operand = multiply
 			}
 		case 13:
-			if initialized {
+			if initialized && operand == none {
 				operand = divide
 			}
 		case 0, 1, 2, 3, 4, 5, 6, 7, 8, 9:
